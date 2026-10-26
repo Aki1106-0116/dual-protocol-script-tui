@@ -1,0 +1,22 @@
+name: test-tui
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y python3-yaml openssl caddy
+      - name: Syntax and storage/key verification
+        run: |
+          for script in *.sh lib/*.sh scripts/*.sh; do bash -n "$script"; done
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Isolated terminal/configuration regression
+        run: sudo env PYTHONDONTWRITEBYTECODE=1 bash scripts/test_backend.sh
+      - name: Real systemd and lock regression
+        run: sudo env DPS_RUN_INTEGRATION=1 bash scripts/test_linux.sh
